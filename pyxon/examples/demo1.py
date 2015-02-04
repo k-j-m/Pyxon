@@ -27,7 +27,7 @@ class SomeClass(object):
 data = {'x':'hello_x','y':'hello_y','z':'ZZZZ',
         'xx':[10,20],'yy':{'1':100,'2':200},
         'zz':{'a':'hello','b':'world','@type':'SomeClass2'}}
-o = objectify(data, SomeClass)
+#o = objectify(data, SomeClass)
 
 # QUESTION: Can I represent data structures such as...
 # Map<String,Map<String,SomeClass>> using my notation?
@@ -41,5 +41,22 @@ data2 = {'a':{'k1':{'k1A':{'a':'hello','b':'world','@type':'SomeClass2'},
          transform_map(identity, transform_map(identity, unobjectify)))
 class FunnyHolder(object): pass
 
+print 'buuuh'
+#fh = objectify(data2, FunnyHolder)
+print 'bzaaat'
 
-fh = objectify(data2, FunnyHolder)
+@sprop.a
+@sprop.b
+@subtyped(using='@type')
+class Abstract(object):
+    pass
+
+@sprop.x
+@sprop.y
+@extending(Abstract, named='Concrete')
+class Concrete(Abstract):
+    pass
+
+data2 = {'a':1, 'b':2, 'x':3, 'y':4, '@type':'Concrete'}
+conc_obj = objectify(data2, Concrete)
+print conc_obj

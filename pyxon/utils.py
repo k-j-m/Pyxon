@@ -25,13 +25,13 @@ def unobjectify(obj):
     # Create empty data
     data = {}
 
+    sprops,cprops = _get_registered_props(cls)
+    
     # Add simple properties
-    sprops = pd.class_sprops.get(cls,[])
     for p in sprops:
         data[p]=getattr(obj,p)
 
     # Add calculated data
-    cprops = pd.class_cprops.get(cls,{})
     for p in cprops:
         f2 = cprops[p][1]
         data[p]=f2(getattr(obj,p))
@@ -40,6 +40,25 @@ def unobjectify(obj):
         
     return data
 
+def _get_registered_props(cls):
+    """
+    Returns all of the registered properties for a given class.
+    Recursively calls up to parent classes that are inherited from.
+    """
+    sprops = pd.class_cprops.get(cls,{}) # [name]
+    cprops = pd.class_cprops.get(cls,{}) # {name:(fn, inv_fn)}
+
+    if cls in conc_to_abstract: # {ConcreteClass: (AbstractClass, _)}
+        parent_cls  = conc_to_abstract[cls][0]
+        parent_sprops, parent_cprops = _get_registered_props(parent_cls)
+
+        sprops = list(set(sprops, parent_sprops))
+        
+        cprops2 = parent_cprops.copy()
+        cprops2.update(cprops)
+        cprops = cprops2
+
+    return sprops,cprops
 
 def obj(cls):
     """
