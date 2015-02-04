@@ -26,7 +26,7 @@ def unobjectify(obj):
     data = {}
 
     sprops,cprops = _get_registered_props(cls)
-    
+        
     # Add simple properties
     for p in sprops:
         data[p]=getattr(obj,p)
@@ -45,14 +45,14 @@ def _get_registered_props(cls):
     Returns all of the registered properties for a given class.
     Recursively calls up to parent classes that are inherited from.
     """
-    sprops = pd.class_cprops.get(cls,{}) # [name]
+    sprops = pd.class_sprops.get(cls,{}) # [name]
     cprops = pd.class_cprops.get(cls,{}) # {name:(fn, inv_fn)}
-
-    if cls in conc_to_abstract: # {ConcreteClass: (AbstractClass, _)}
-        parent_cls  = conc_to_abstract[cls][0]
+    
+    if cls in pd.conc_to_abstract: # {ConcreteClass: (AbstractClass, _)}
+        parent_cls  = pd.conc_to_abstract[cls][0]
         parent_sprops, parent_cprops = _get_registered_props(parent_cls)
 
-        sprops = list(set(sprops, parent_sprops))
+        sprops = list(set(sprops).union(set(parent_sprops)))
         
         cprops2 = parent_cprops.copy()
         cprops2.update(cprops)
@@ -83,13 +83,13 @@ def objectify(data, cls):
     concrete_cls = pd.conc2(data, cls)
     obj = concrete_cls()
 
+    sprops,cprops = _get_registered_props(cls)
+    
     # Add simple properties from data
-    sprops = pd.class_sprops.get(concrete_cls,[])
     for p in sprops:
         setattr(obj, p, data[p])
 
     # Add calculated properties from data
-    cprops = pd.class_cprops.get(concrete_cls,{})
     for p in cprops:
         f1 = cprops[p][0]
         setattr(obj, p, f1(data[p]))
