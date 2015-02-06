@@ -38,23 +38,6 @@ def unobjectify(obj):
             
     return data
 
-def _get_registered_props(cls):
-    """
-    Returns all of the registered properties for a given class.
-    Recursively calls up to parent classes that are inherited from.
-
-    {propname: (fn, inv_fn)}
-    """
-    props = pd.class_props.get(cls,{}) # [name]
-
-    parent_cls = _get_parent_class(cls) # parent class OR None
-    if parent_cls is not None: 
-        parent_props = _get_registered_props(parent_cls)
-        props2 = parent_cprops.copy()
-        props2.update(cprops)
-        props = cprops2
-
-    return props
 
 def _get_parent_class(cls):
     """
@@ -96,7 +79,7 @@ def _get_init_args(cls):
     # in the __init__ mean we can just pass leftovers on up the inheritance
     # tree. They ARE however needed during serialisation.
     
-    myprops = _get_class_props(cls)
+    myprops = pd.get_class_props(cls)
     arg_funs.update(myprops)
 
     myargs.extend(args)
@@ -106,17 +89,6 @@ def _get_init_args(cls):
     
     
 
-def _get_class_props(cls):
-    """
-    Returns a dict containing the deserialise/serialise functions for
-    all class properties that need transformations applied to them.
-
-    {propname: (deserialiser, serialiser)}
-
-    We give this a protective copy because it would be a BAD thing for
-    this to get changed in the field.
-    """
-    return pd.class_props.get(cls,{}).copy()
     
 def asobj(cls):
     """
