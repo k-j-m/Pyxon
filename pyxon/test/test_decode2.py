@@ -82,3 +82,7 @@ class TestUtils(unittest.TestCase):
         expected = 'AbstractClass'
         returned = get_parent_class('ConcreteClass')
         self.assertEquals(expected, returned)
+
+        expected = None
+        returned = get_parent_class('not there')
+        self.assertEquals(expected, returned)

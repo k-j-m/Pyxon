@@ -22,11 +22,10 @@ def unobjectify(obj):
     { 'a':1, 'b':2, 'c':'three' }
     """
     cls = obj.__class__
-
     
     #([prop_name] {prop_name: (fn, inv_fn)}
-    prop_names, prop_funs = _get_init_args(cls)
-
+    prop_names, prop_funs = get_init_args(cls)
+    
     # Create empty data
     data = {}
     for prop_name in prop_names:
@@ -39,53 +38,50 @@ def unobjectify(obj):
     return data
 
 
-def _get_parent_class(cls):
+def _get_init_args(get_parent_class, get_class_props):
     """
-    Returns the parent inherited class if possible, otherwise
-    returns None.
+    Make it so get_parent_class and get_class props functions can
+    be passed in as arguments to facilitate testing.
     """
-    if cls in pd.conc_to_abstract:
-        return pd.conc_to_abstract[cls][0]
-    else:
-        return None
-
-def _get_init_args(cls):
-    """
-    Returns a tuple of the form
-    ([argname], {argname:(deserialiser, serialiser)})
-
-    The first item is just a list of all arguments listed in
-    the class __init__ method, along with all arguments for any
-    inherited classes.
-
-    The second item is a dict giving the functions needed to deserialise
-    and serialise an argument when it does not correspond to a native
-    JSON data type.
-    """
-
-    # Do we inherit?
-    parent_cls = _get_parent_class(cls)
-    if parent_cls is not None:
-        args, arg_funs = _get_init_args(parent_cls)
-    else:
-        args, arg_funs = [], {}
-
-    myargs = inspect.getargspec(cls.__init__).args[1:]
-    # Make sure there are no duplicate arguments: this is forbidden
-    assert set(myargs) & set(args) == set()
-
+    def get_init_args2(cls):
+        """
+        Returns a tuple of the form
+        ([argname], {argname:(deserialiser, serialiser)})
     
-    # The parent args aren't needed during deserialisation (**kwargs
-    # in the __init__ mean we can just pass leftovers on up the inheritance
-    # tree. They ARE however needed during serialisation.
+        The first item is just a list of all arguments listed in
+        the class __init__ method, along with all arguments for any
+        inherited classes.
     
-    myprops = pd.get_class_props(cls)
-    arg_funs.update(myprops)
+        The second item is a dict giving the functions needed to deserialise
+        and serialise an argument when it does not correspond to a native
+        JSON data type.
+        """
 
-    myargs.extend(args)
+        # Do we inherit?
+        parent_cls = get_parent_class(cls)
+        if parent_cls is not None:
+            args, arg_funs = get_init_args2(parent_cls)
+        else:
+            args, arg_funs = [], {}
 
-    return (myargs, arg_funs)
+        myargs = inspect.getargspec(cls.__init__).args[1:]
+        # Make sure there are no duplicate arguments: this is forbidden
+        assert set(myargs) & set(args) == set()
+    
+    
+        # The parent args aren't needed during deserialisation (**kwargs
+        # in the __init__ mean we can just pass leftovers on up the inheritance
+        # tree. They ARE however needed during serialisation.
         
+        myprops = get_class_props(cls)
+        arg_funs.update(myprops)
+
+        myargs.extend(args)
+    
+        return (myargs, arg_funs)
+    return get_init_args2
+
+get_init_args = _get_init_args(pd.get_parent_class, pd.get_class_props)
     
     
 
@@ -139,7 +135,7 @@ def objectify(data, cls):
     # Create empty class
     concrete_cls = pd.conc2(data, cls)
 
-    prop_names, prop_funs = _get_init_args(cls)
+    prop_names, prop_funs = get_init_args(cls)
 
     # TODO: knock out loop and replace with set comparison
     for prop_name in prop_names:
