@@ -1,5 +1,6 @@
 import unittest
 import pyxon.utils2 as utils
+from pyxon.decode2 import *
 
 class TestUtils(unittest.TestCase):
 
@@ -115,3 +116,91 @@ class TestUtils(unittest.TestCase):
 
         self.assertEquals(data,returned)
     
+
+    def test_objectify_inherit(self):
+
+        @subtyped(using='$type')
+        class AbstractClass(object):
+            def __init__(self, a,b,c, **kwargs):
+                self.a = a
+                self.b = b
+                self.c = c
+
+        @extending(AbstractClass, named='concrete_label')
+        class ConcreteClass(AbstractClass):
+            def __init__(self, x,y,z,**kwargs):
+                super(ConcreteClass,self).__init__(**kwargs)
+                self.x = x
+                self.y = y
+                self.z = z
+
+        data = {'a':1, 'b':2, 'c':3, 'x':101, 'y':102, 'z':103, '$type':'concrete_label'}
+
+        obj = utils.objectify(data, AbstractClass)
+
+        self.assertEquals(1,obj.a)
+        self.assertEquals(2,obj.b)
+        self.assertEquals(3,obj.c)
+        self.assertEquals(101,obj.x)
+        self.assertEquals(102,obj.y)
+        self.assertEquals(103,obj.z)
+
+    def test_unobjectify_inherit(self):
+
+        @subtyped(using='$type')
+        class AbstractClass(object):
+            def __init__(self, a,b,c, **kwargs):
+                self.a = a
+                self.b = b
+                self.c = c
+
+        @extending(AbstractClass, named='concrete_label')
+        class ConcreteClass(AbstractClass):
+            def __init__(self, x,y,z,**kwargs):
+                super(ConcreteClass,self).__init__(**kwargs)
+                self.x = x
+                self.y = y
+                self.z = z
+
+        data = {'a':1, 'b':2, 'c':3, 'x':101, 'y':102, 'z':103, '$type':'concrete_label'}
+
+        obj = utils.objectify(data, AbstractClass)
+
+        data2 = utils.unobjectify(obj)
+
+        self.assertEquals(data,data2)
+
+    def test_complex_objectify(self):
+
+        class ClassA(object):
+            def __init__(self, a,b,c):
+                self.a = a
+                self.b = b
+                self.c = c
+
+        asobj, aslist, asmap = utils.asobj, utils.aslist, utils.asmap
+        nop = utils.nop
+        
+        identity = lambda x: x
+        
+        @prop.x(asobj(ClassA))
+        @prop.y(aslist(asobj(ClassA)))
+        @prop.z(asmap(nop, asobj(ClassA)))
+        class ClassB(object):
+            def __init__(self, x,y,z):
+                self.x = x
+                self.y = y
+                self.z = z
+
+        class_a_data = {'a':1,'b':2,'c':3}
+        class_b_data = {'x':class_a_data,
+                        'y':[class_a_data, class_a_data],
+                        'z':{'somekey':class_a_data}}
+        class_b = utils.objectify(class_b_data, ClassB)
+
+        self.assertEquals(class_b.x.a, 1)
+        self.assertEquals(class_b.x.b, 2)
+        self.assertEquals(class_b.x.c, 3)
+            
+
+            

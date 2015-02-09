@@ -34,7 +34,11 @@ def unobjectify(obj):
             data[prop_name]=serialiser(getattr(obj,prop_name))
         else:
             data[prop_name]=getattr(obj,prop_name)
-            
+
+    # handle type annotations
+    annotations = pd.get_type_annotation(cls)
+    data.update(annotations)
+    
     return data
 
 
@@ -84,8 +88,16 @@ def _get_init_args(get_parent_class, get_class_props):
 get_init_args = _get_init_args(pd.get_parent_class, pd.get_class_props)
     
     
+def identity(x):
+    """
+    Identity function is needed when performing transformations
+    on maps where some operation is needed on either the keys
+    or values, but not both.
+    """
+    return x
 
-    
+nop = (identity, identity)
+
 def asobj(cls):
     """
     Returns a tuple pair of functions. The first for deserialising,
@@ -168,10 +180,4 @@ def transform_map(kfun=lambda x: x, vfun=lambda x: x):
 def transform_list(item_decoder=lambda x: x):
     return lambda lst: map(item_decoder, lst)
 
-def identity(x):
-    """
-    Identity function is needed when performing transformations
-    on maps where some operation is needed on either the keys
-    or values, but not both.
-    """
-    return x
+

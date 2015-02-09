@@ -25,7 +25,25 @@ def _add_type_property(specifier_properties, conc_to_abstract):
     """
     Returns a function that returns type specifier properties.
     I have done it like this to let me test the returned function
-    independently of any module-level variables.
+    independent        @subtyped(using='$type')
+        class AbstractClass(object):
+            def __init__(self, a,b,c, **kwargs):
+                self.a = a
+                self.b = b
+                self.c = c
+
+        @extending(AbstractClass, named='concrete_label')
+        class ConcreteClass(AbstractClass):
+            def __init__(self, x,y,z,**kwargs):
+                super(ConcreteClass,self).__init__(**kwargs)
+                self.x = x
+                self.y = y
+                self.z = z
+
+        data = {'a':1, 'b':2, 'c':3, 'x':101, 'y':102, 'z':103, '$type':'concrete_label'}
+
+        obj = utils.objectify(data, AbstractClass)
+ly of any module-level variables.
     """
     def fun(data,cls):
         """
@@ -208,4 +226,18 @@ def _get_parent_class(conc_to_abstract):
     return get_parent_class
 
 get_parent_class = _get_parent_class(conc_to_abstract)
+
+def _get_type_annotation(conc_to_abstract, specifier_properties):
+    def get_type_annotation(cls):
+        if not cls in conc_to_abstract:
+            return {}
+        else:
+            parent_class, type_label = conc_to_abstract[cls]
+            type_propname = specifier_properties[parent_class]
+            return {type_propname: type_label}
+
+    return get_type_annotation
+
+get_type_annotation = _get_type_annotation(conc_to_abstract, specifier_properties)
+
 
